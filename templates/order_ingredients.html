@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Order Ingredients</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="month"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        button[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <h1>Update Order Ingredients</h1>
+    <form action="/update_order_ingredients" method="post">
+        <label for="order_date">Order Date (MM/YYYY):</label>
+        <input type="month" id="order_date" name="order_date">
+        <label for="price_spice">Price of Spice:</label>
+        <input type="number" name="price_spice" id="price_spice" required>
+        <label for="price_vegetables">Price of Vegetables:</label>
+        <input type="number" name="price_vegetables" id="price_vegetables" required>
+        <label for="price_meat">Price of Meat:</label>
+        <input type="number" name="price_meat" id="price_meat" required>
+        <label for="total_spice">Total Spice Quantity (in Gm):</label>
+        <input type="number" name="total_spice" id="total_spice" required>
+        <label for="total_vegetables">Total Vegetables Quantity (in Gm):</label>
+        <input type="number" name="total_vegetables" id="total_vegetables" required>
+        <label for="total_meat">Total Meat Quantity (in Gm):</label>
+        <input type="number" name="total_meat" id="total_meat" required>
+        <button type="submit">Submit</button>
+    </form>
+    {% if message %}
+    <p class="message">{{ message }}</p>
+    {% endif %}
+</body>
+</html>

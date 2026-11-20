@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Clerk Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome, {{ sales_clerk_name }} (Sales Clerk)</h1>
+    <div style="text-align: center;">
+        <button onclick="location.href='/view_orders'">View All Orders</button>
+        <button onclick="location.href='/generate_bills'">Generate Bills</button>
+        <button onclick="location.href='/order_ingredients'">Upload Ordered Ingredients</button>
+        <button onclick="location.href='/show_ingredients'">Show Ordered Ingredients</button>
+    </div>
+</body>
+</html>

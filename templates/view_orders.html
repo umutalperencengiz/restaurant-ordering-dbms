@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Orders</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: #fff;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .total-pln {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .total-amount {
+            font-size: 20px;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>View Orders</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Customer Name</th>
+                <th>Contact No</th>
+                <th>Order Date</th>
+                <th>Order ID</th>
+                <th>Order Value (in PLN)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders_with_ids %}
+            <tr>
+                <td>{{ order[0] }}</td>
+                <td>{{ order[1] }}</td>
+                <td>{{ order[2] }}</td>
+                <td>{{ order[3] }}</td>
+                <td>
+                    {% for order_id in order[3].split(',') %}
+                        {{ order_values[order[3]][loop.index0] }},
+                    {% endfor %}
+                    = {{ total_pln_per_customer_per_day[order[0]][order[2]] }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Daily PLN</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Daily PLN</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for date, pln in daily_pln.items() %}
+            <tr>
+                <td>{{ date }}</td>
+                <td>{{ pln }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Total PLN per Customer</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Customer Name</th>
+                <th>Total PLN</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for customer, pln in total_pln_per_customer.items() %}
+            <tr>
+                <td>{{ customer }}</td>
+                <td>{{ pln }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-pln">
+        <h2>Total PLN for All Days</h2>
+        <p class="total-amount">{{ total_pln }}</p>
+    </div>
+</body>
+</html>

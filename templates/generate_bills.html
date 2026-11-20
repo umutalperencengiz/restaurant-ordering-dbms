@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Bills</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #666;
+        }
+        select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            color: #333;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4caf50;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Generate Bills</h1>
+    <form action="/generate_bills" method="post">
+        <label for="bill_date">Select Bill Date:</label>
+        <select name="bill_date" id="bill_date" onchange="submitForm()">
+            {% for date in unique_dates %}
+                <option value="{{ date }}">{{ date }}</option>
+            {% endfor %}
+        </select>
+        <label for="customer_id">Select Customer:</label>
+        <select name="customer_id" id="customer_id">
+            {% for customer_id in unique_customer_ids %}
+                <option value="{{ customer_id }}">{{ customer_id }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Generate Bill</button>
+    </form>
+    <script>
+        function submitForm() {
+            document.getElementById("bill_form").submit();
+        }
+    </script>
+</body>
+</html>

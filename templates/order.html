@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Place Order</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        select, input[type="number"] {
+            width: calc(100% - 10px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .add-dish {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+            margin-top: 10px;
+        }
+
+        .add-dish:hover {
+            color: #0056b3;
+        }
+
+        button[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Place Order</h1>
+    <form action="/place_order" method="POST">
+        <div id="items">
+            <div class="item">
+                <label for="item1">Item 1:</label>
+                <select id="item1" name="item1" required>
+                    {% for item in items %}
+                        <option value="{{ item }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+                <label for="quantity1">Quantity:</label>
+                <input type="number" id="quantity1" name="quantity1" required min="1"><br>
+            </div>
+        </div>
+        <div id="add-item" class="add-dish">+ Add Dish</div>
+        <button type="submit">Place Order</button>
+    </form>
+
+    <script>
+        let counter = 2;
+        const addItemButton = document.getElementById('add-item');
+        addItemButton.addEventListener('click', function() {
+            const itemsDiv = document.getElementById('items');
+            const newItemDiv = document.createElement('div');
+            newItemDiv.classList.add('item');
+            newItemDiv.innerHTML = `
+                <label for="item${counter}">Item ${counter}:</label>
+                <select id="item${counter}" name="item${counter}" required>
+                    {% for item in items %}
+                        <option value="{{ item }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+                <label for="quantity${counter}">Quantity:</label>
+                <input type="number" id="quantity${counter}" name="quantity${counter}" required min="1"><br>
+            `;
+            itemsDiv.appendChild(newItemDiv);
+            counter++;
+        });
+    </script>
+</body>
+</html>

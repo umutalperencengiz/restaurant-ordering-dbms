@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Summarized Report of Ingredient Orders</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        table {
+            width: 80%;
+            margin: 0 auto;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h2>Monthly Summarized Report of Ingredient Orders</h2>
+    <h3>Month: {{ order_date }}</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Spice</th>
+                <th>Quantity (in Gm)</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Total</td>
+                <td>{{ ingredient_orders[0][3] }}</td>
+                <td>{{ ingredient_orders[0][0] }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Vegetables</th>
+                <th>Quantity (in Gm)</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Total</td>
+                <td>{{ ingredient_orders[0][4] }}</td>
+                <td>{{ ingredient_orders[0][1] }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Meat</th>
+                <th>Quantity (in Gm)</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Total</td>
+                <td>{{ ingredient_orders[0][5] }}</td>
+                <td>{{ ingredient_orders[0][2] }}</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>
