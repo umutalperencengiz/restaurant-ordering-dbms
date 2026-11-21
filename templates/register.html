@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .login-container {
+            width: 300px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-container h2 {
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        .login-toggle {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .login-toggle button {
+            width: 48%;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 13px;
+        }
+
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .flash-messages {
+            margin-bottom: 15px;
+        }
+
+        .flash-messages .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .flash-messages .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Register</h1>
+
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="login-toggle">
+            <button onclick="showLogin()">Login</button>
+            <button onclick="showRegister()" style="background:#0056b3;">Register</button>
+        </div>
+
+        <div id="customerLogin" style="display: none;">
+            <h2>Customer Login</h2>
+            <form action="/customer_login" method="POST">
+                <input type="text" name="name" placeholder="Name" required><br>
+                <input type="tel" name="telephone" placeholder="Telephone Number" required><br>
+                <input type="email" name="email" placeholder="Email" required><br>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <div id="customerRegister">
+            <h2>Create Account</h2>
+            <form action="/register" method="POST">
+                <input type="text" name="name" placeholder="Full Name" required><br>
+                <input type="tel" name="telephone" placeholder="Telephone Number" required><br>
+                <input type="email" name="email" placeholder="Email Address" required><br>
+                <button type="submit">Register</button>
+            </form>
+        </div>
+
+        <div class="back-link">
+            Already have an account? <a href="/">Go to login</a>
+        </div>
+    </div>
+
+    <script>
+        function showLogin() {
+            document.getElementById('customerLogin').style.display = 'block';
+            document.getElementById('customerRegister').style.display = 'none';
+        }
+
+        function showRegister() {
+            document.getElementById('customerLogin').style.display = 'none';
+            document.getElementById('customerRegister').style.display = 'block';
+        }
+
+        // Start on the register tab since we arrived from /register
+        showRegister();
+    </script>
+</body>
+</html>

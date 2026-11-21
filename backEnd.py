@@ -73,6 +73,45 @@ def order_ingredients():
     return render_template("order_ingredients.html")
 
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """Customer registration page."""
+    if request.method == "GET":
+        return render_template("register.html")
+
+    name = request.form.get("name", "").strip()
+    telephone = request.form.get("telephone", "").strip()
+    email = request.form.get("email", "").strip()
+
+    if not name or not telephone or not email:
+        flash("Please fill in all fields.", "error")
+        return render_template("register.html")
+
+    # Check if customer already exists
+    existing = db_query(
+        "SELECT customer_id FROM Customer WHERE email=%s OR telephoneNum=%s",
+        (email, telephone), fetchone=True,
+    )
+    if existing:
+        flash("A customer with this email or telephone already exists.", "error")
+        return render_template("register.html")
+
+    try:
+        new_id = db_query(
+            "INSERT INTO Customer (customerName, telephoneNum, email) VALUES (%s, %s, %s)",
+            (name, telephone, email), commit=True,
+        )
+        session["user"] = name
+        session["customer_id"] = new_id
+        session["role"] = "customer"
+        session["email"] = email
+        flash("Account created successfully! You are now logged in.", "success")
+        return redirect("/customer_dashboard")
+    except Error as e:
+        flash(f"Registration failed: {e}", "error")
+        return render_template("register.html")
+
+
 @app.route("/sales_clerk_login", methods=["POST"])
 def sales_clerk_login():
     email = request.form.get("email", "")
@@ -116,17 +155,9 @@ def customer_login():
         flash(f"Welcome back, {row[1]}!", "success")
         return redirect("/customer_dashboard")
 
-    # New customer — create account
-    new_id = db_query(
-        "INSERT INTO Customer (customerName, telephoneNum, email) VALUES (%s, %s, %s)",
-        (name, telephone, email), commit=True,
-    )
-    session["user"] = name
-    session["customer_id"] = new_id
-    session["role"] = "customer"
-    session["email"] = email
-    flash("Account created and logged in.", "success")
-    return redirect("/customer_dashboard")
+    # Customer not registered — send them to the registration page
+    flash("No account found with these details. Please register first.", "error")
+    return redirect("/register")
 
 
 @app.route("/customer_dashboard")
