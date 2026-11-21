@@ -48,6 +48,9 @@
     <h2>Monthly Summarized Report of Ingredient Orders</h2>
     <h3>Month: {{ order_date }}</h3>
 
+    {% if not ingredient_orders %}
+    <p style="text-align:center;color:#888;">No ingredient orders recorded for this month.</p>
+    {% else %}
     <table>
         <thead>
             <tr>
@@ -98,5 +101,6 @@
             </tr>
         </tbody>
     </table>
+    {% endif %}
 </body>
 </html>

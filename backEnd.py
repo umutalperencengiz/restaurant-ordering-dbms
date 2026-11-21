@@ -52,6 +52,16 @@ def db_query(query, args=(), fetchone=False, commit=False):
     return cursor.fetchall()
 
 
+def normalize_date(value: str) -> str:
+    """Convert a YYYY-MM (from <input type='month'>) to YYYY-MM-DD for MySQL DATE."""
+    value = value.strip()
+    if not value:
+        return value
+    if len(value) == 7 and value[4] == "-":  # YYYY-MM
+        return value + "-01"
+    return value  # already YYYY-MM-DD or invalid (MySQL will reject)
+
+
 # ---------------------------------------------------------------- routes
 @app.route("/")
 def login():
@@ -234,16 +244,17 @@ def generate_bills():
                 (bill_date, customer_id),
             ) or []
             cust = db_query(
-                "SELECT customerName FROM Customer WHERE customer_id=%s",
+                "SELECT customerName, telephoneNum FROM Customer WHERE customer_id=%s",
                 (customer_id,), fetchone=True,
             )
             customer_name = cust[0] if cust else "Customer"
+            contact_no = cust[1] if cust and len(cust) > 1 else ""
             total_price = sum(o[1] for o in orders if o[1] is not None)
             bill_no = f"B-{bill_date.replace('-', '')}-{customer_name.replace(' ', '')}"
             return render_template(
                 "bill_template.html",
                 bill_no=bill_no, bill_date=bill_date, customer_name=customer_name,
-                orders=orders, total_price=total_price,
+                contact_no=contact_no, orders=orders, total_price=total_price,
             )
         except Error as e:
             return f"Database error: {e}", 500
@@ -257,7 +268,7 @@ def generate_bills():
 def update_order_ingredients():
     if "user" not in session or session.get("role") != "clerk":
         return redirect("/")
-    order_date = request.form.get("order_date", "")
+    order_date = normalize_date(request.form.get("order_date", ""))
     price_spice = request.form.get("price_spice", "0")
     price_vegetables = request.form.get("price_vegetables", "0")
     price_meat = request.form.get("price_meat", "0")
@@ -331,7 +342,7 @@ def show_ingredients():
     if "user" not in session:
         return redirect("/")
     if request.method == "POST":
-        order_date = request.form.get("order_date", "")
+        order_date = normalize_date(request.form.get("order_date", ""))
         try:
             ingredient_orders = db_query(
                 "SELECT price_spice, price_vegetables, price_meat, total_spice, total_vegetables, total_meat "

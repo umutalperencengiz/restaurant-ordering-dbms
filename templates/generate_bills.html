@@ -51,7 +51,7 @@
 </head>
 <body>
     <h1>Generate Bills</h1>
-    <form action="/generate_bills" method="post">
+    <form action="/generate_bills" method="post" id="bill_form">
         <label for="bill_date">Select Bill Date:</label>
         <select name="bill_date" id="bill_date" onchange="submitForm()">
             {% for date in unique_dates %}
