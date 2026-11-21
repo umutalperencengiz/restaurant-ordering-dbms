@@ -362,6 +362,20 @@ def logout():
     return redirect("/")
 
 
+@app.route("/health")
+def health():
+    """Health check endpoint for deployment monitoring (Render, etc.)."""
+    db, cursor = get_db()
+    if cursor is None:
+        return {"status": "unhealthy", "database": "disconnected"}, 503
+    try:
+        cursor.execute("SELECT 1")
+        cursor.fetchone()
+        return {"status": "healthy", "database": "connected"}
+    except Error as e:
+        return {"status": "unhealthy", "database": str(e)}, 503
+
+
 @app.route("/order_screen")
 def order_screen():
     if "user" not in session or session.get("role") != "customer":

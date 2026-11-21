@@ -1,23 +1,52 @@
 # Restaurant Ordering DBMS
 
-A Flask + MySQL restaurant ordering system with separate portals for customers and sales clerks.
+A full-stack Flask + MySQL restaurant ordering system with separate portals for customers and sales clerks. Built as a database systems course project — production-ready with environment-based configuration, bcrypt password hashing, and per-request database connections.
 
-## Features
+[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-3.0-green)](https://flask.palletsprojects.com)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-orange)](https://mysql.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-- **Customer portal**: register/login, browse menu items, place orders (with ingredient stock checks)
-- **Sales clerk portal**: login, dashboard, view orders with daily/total P&L, generate bills, manage ingredient restocking
-- **Database**: MySQL schema included (`schema.sql`) with seed data
-- **Security**: bcrypt password hashing, per-request DB connections, session-based auth, flash messages
-- **Deploy-ready**: `requirements.txt`, `Procfile`, `runtime.txt`, env-based configuration
+---
 
-## Local setup
+## 📖 About
 
-### 1. Clone and enter the folder
+Restaurant Ordering DBMS is a web application that manages a restaurant's daily operations:
+
+- **Customers** can register/log in, browse the menu, and place orders. Orders are checked against live ingredient stock (spice, vegetables, meat) so the restaurant never sells what it can't make.
+- **Sales clerks** can log in to a dashboard, view all orders with daily and per-customer P&L reports, generate printable bills, and record daily ingredient restocking.
+- All data lives in MySQL; every query uses parameterized statements (no SQL injection).
+
+---
+
+## 🚀 Live Demo
+
+Deploy your own copy in under 5 minutes on Render (free tier):
+
+1. **Fork this repo** to your GitHub account.
+2. **Create a MySQL database** on Render: *New → Managed Database → MySQL*. Note the host, user, and password.
+3. **Create a Web Service** → connect your fork:
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `gunicorn backEnd:app`
+   - Environment variables (see `.env.example`):
+     - `SECRET_KEY` — any long random string
+     - `DB_HOST`, `DB_USER`, `DB_PASSWORD` — from your Render MySQL instance
+     - `DB_NAME=assignment3database`
+     - `FLASK_DEBUG=false`
+4. **Seed the database** by running `schema.sql` against your MySQL instance.
+5. Visit your Render URL. Default clerk login: `ahmet@restaurant.local` / `clerk123`.
+
+---
+
+## 🛠 Local Setup
+
+### 1. Clone
 ```bash
-cd SelectedTopicsDBMS
+git clone https://github.com/umutalperencengiz/restaurant-ordering-dbms.git
+cd restaurant-ordering-dbms
 ```
 
-### 2. Create a virtual environment
+### 2. Virtual environment
 ```bash
 python -m venv venv
 venv\Scripts\activate      # Windows
@@ -29,79 +58,72 @@ source venv/bin/activate   # macOS/Linux
 pip install -r requirements.txt
 ```
 
-### 4. Set up the database
-Make sure MySQL is running, then initialize the database:
+### 4. Database
+Make sure MySQL is running, then initialize:
 ```bash
 mysql -u root -p < schema.sql
 ```
 
-The seed data creates:
-- Menu items (Lahmacun, Pide, Kebab, Durum, Beverage)
-- Ingredient stock totals (500 each of spice / vegetable / meat)
-- Sales clerk: `ahmet@restaurant.local` / password `clerk123`
+Seed data includes menu items (Lahmacun, Pide, Kebab, Durum, Beverage), ingredient stock, and a sales clerk account:
+- Email: `ahmet@restaurant.local`
+- Password: `clerk123`
 
-### 5. Configure environment (optional)
-Create a `.env` file if you want to override defaults:
-```env
-SECRET_KEY=replace-with-a-random-secret
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=assignment3database
-FLASK_DEBUG=true
+### 5. Configure
+Copy `.env.example` to `.env` and fill in your MySQL password:
+```bash
+cp .env.example .env
+# edit .env with your values
 ```
 
-### 6. Run locally
+### 6. Run
 ```bash
 python backEnd.py
 ```
-Visit http://127.0.0.1:5000
+Visit **http://127.0.0.1:5000**
 
-## Deployment (Render.com)
+---
 
-This app is ready to deploy on [Render](https://render.com) (free tier) connected to GitHub.
-
-### 1. Push to GitHub
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/umutalperencengiz/<repo-name>.git
-git push -u origin main
-```
-
-### 2. Create a MySQL database on Render
-- In Render dashboard: **New** → **Managed Database** → **MySQL**
-- Note the internal database name, user, and password Render gives you
-
-### 3. Create the web service
-- **New** → **Web Service** → connect your GitHub repo
-- Build command: `pip install -r requirements.txt`
-- Start command: `gunicorn backEnd:app`
-- Add environment variables:
-  - `SECRET_KEY` — a long random string
-  - `DB_HOST` — Render MySQL host
-  - `DB_USER` — Render MySQL user
-  - `DB_PASSWORD` — Render MySQL password
-  - `DB_NAME` — `assignment3database`
-  - `FLASK_DEBUG` — `false`
-
-### 4. Seed the database
-Once deployed, connect to your Render MySQL instance and run:
-```bash
-mysql -h <render-host> -u <render-user> -p assignment3database < schema.sql
-```
-
-## Project structure
+## 🗄 Database Schema
 
 ```
-SelectedTopicsDBMS/
-├── backEnd.py          # Flask application (routes + DB logic)
+Customer          customer_id, name, telephone, email
+SalesClerk        clerk_id, name, email, password (bcrypt)
+Item              item_id, name, price
+ingredients       item_id, spice, vegetable, meat  (item_id=7 = running stock)
+orders            order_id, customer_id, item, quantity, date, totalPrice
+order_ingredients order_date, prices, totals per ingredient
+```
+
+See `schema.sql` for the full DDL and seed data.
+
+---
+
+## 🐛 Bugs Fixed (vs. original submission)
+
+| Area | Issue | Fix |
+|------|-------|-----|
+| Routing | `customer_dashboard` had no `@app.route` — page was unreachable | Added decorator |
+| Templating | `order_screen` passed no `items` — template crashed | Query `Item` and pass `items` |
+| Security | Passwords stored in plaintext | `bcrypt` hashing |
+| Security | Hardcoded DB credentials & `SECRET_KEY` | Environment variables |
+| Reliability | Global MySQL connection (not thread-safe) | Per-request connection via Flask `g` |
+| Reliability | `debug=True` hardcoded | Controlled by `FLASK_DEBUG` env var |
+| Data integrity | `<input type="month">` sends `YYYY-MM` but DB needs `DATE` | `normalize_date()` helper |
+| UX | Raw string error responses | `flash()` messages |
+| Deployment | No `requirements.txt`, `Procfile`, or `runtime.txt` | Added all three |
+
+---
+
+## 📁 Project Structure
+
+```
+restaurant-ordering-dbms/
+├── backEnd.py          # Flask app — routes + database logic
 ├── schema.sql          # MySQL schema + seed data
 ├── requirements.txt    # Python dependencies
 ├── Procfile            # Render/Railway process definition
 ├── runtime.txt         # Python version pin
+├── .env.example        # Environment variable template
 ├── .gitignore
 ├── README.md
 └── templates/          # Jinja2 HTML templates
@@ -116,13 +138,21 @@ SelectedTopicsDBMS/
     └── monthly_report_form.html
 ```
 
-## Bugs fixed vs. original
+---
 
-- `customer_dashboard` was missing its `@app.route` decorator — the page never loaded
-- `order_screen` rendered `order.html` without passing `items` — template crashed
-- Hardcoded DB credentials → now read from environment variables
-- Weak `SECRET_KEY` → now env-configurable
-- Plaintext password storage → bcrypt hashing
-- Global `mysql.connector` connection (not thread-safe) → per-request connection via Flask `g`
-- `debug=True` hardcoded → controlled by `FLASK_DEBUG` env var
-- Raw string error responses → `flash()` messages with proper HTTP status codes
+## 🔐 Security Notes
+
+- Passwords are hashed with bcrypt — never stored plaintext.
+- All SQL queries use parameterized placeholders (`%s`) — immune to SQL injection.
+- Session-based authentication with role checks (`customer` vs `clerk`).
+- `.env` and `__pycache__` are gitignored — secrets never committed.
+
+---
+
+## 📄 License
+
+MIT — feel free to use this as a template for your own projects.
+
+---
+
+*Built by Umut Alperen Cengiz — Database Systems course project.*
