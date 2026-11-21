@@ -1,83 +1,62 @@
--- Database schema for the restaurant ordering DBMS project
--- Run this once on a fresh MySQL instance:
---   mysql -u root -p < schema.sql
+-- SQLite schema for Restaurant Ordering DBMS
+-- No external database server needed — everything lives in restaurant.db
 
-DROP DATABASE IF EXISTS assignment3database;
-CREATE DATABASE assignment3database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE assignment3database;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS order_ingredients;
+DROP TABLE IF EXISTS ingredients;
+DROP TABLE IF EXISTS Item;
+DROP TABLE IF EXISTS Customer;
+DROP TABLE IF EXISTS SalesClerk;
 
--- ----------------------------------------------------------------
--- Sales clerks (staff who manage orders / ingredients)
--- ----------------------------------------------------------------
 CREATE TABLE SalesClerk (
-    clerk_id    INT AUTO_INCREMENT PRIMARY KEY,
-    clerkName   VARCHAR(100) NOT NULL,
-    email       VARCHAR(150) NOT NULL UNIQUE,
-    password    VARCHAR(255) NOT NULL,   -- bcrypt hash
+    clerk_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    clerkName   TEXT NOT NULL,
+    email       TEXT NOT NULL UNIQUE,
+    password    TEXT NOT NULL,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ----------------------------------------------------------------
--- Customers
--- ----------------------------------------------------------------
 CREATE TABLE Customer (
-    customer_id   INT AUTO_INCREMENT PRIMARY KEY,
-    customerName  VARCHAR(100) NOT NULL,
-    telephoneNum  VARCHAR(30)  NOT NULL,
-    email         VARCHAR(150) NOT NULL,
+    customer_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    customerName  TEXT NOT NULL,
+    telephoneNum  TEXT NOT NULL,
+    email         TEXT NOT NULL,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ----------------------------------------------------------------
--- Menu items
--- ----------------------------------------------------------------
 CREATE TABLE Item (
-    item_id   INT AUTO_INCREMENT PRIMARY KEY,
-    name      VARCHAR(100) NOT NULL UNIQUE,
-    price     DECIMAL(10,2) NOT NULL DEFAULT 0.00
+    item_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name      TEXT NOT NULL UNIQUE,
+    price     REAL NOT NULL DEFAULT 0.00
 );
 
--- ----------------------------------------------------------------
--- Ingredient usage per item (grams / units)
--- item_id = 7 holds the running TOTALS of all ingredients in stock.
--- ----------------------------------------------------------------
 CREATE TABLE ingredients (
-    item_id   INT PRIMARY KEY,
-    spice     INT NOT NULL DEFAULT 0,
-    vegetable INT NOT NULL DEFAULT 0,
-    meat      INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (item_id) REFERENCES Item(item_id)
+    item_id   INTEGER PRIMARY KEY,
+    spice     INTEGER NOT NULL DEFAULT 0,
+    vegetable INTEGER NOT NULL DEFAULT 0,
+    meat      INTEGER NOT NULL DEFAULT 0
 );
 
--- ----------------------------------------------------------------
--- Orders placed by customers
--- ----------------------------------------------------------------
 CREATE TABLE orders (
-    order_id    INT AUTO_INCREMENT PRIMARY KEY,
-    customer_id INT NOT NULL,
-    name        VARCHAR(100) NOT NULL,      -- item name ordered
-    quantity    INT NOT NULL DEFAULT 1,
-    date        DATE NOT NULL,
-    totalPrice  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    FOREIGN KEY (customer_id) REFERENCES Customer(customer_id)
+    order_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    name        TEXT NOT NULL,
+    quantity    INTEGER NOT NULL DEFAULT 1,
+    date        TEXT NOT NULL,
+    totalPrice  REAL NOT NULL DEFAULT 0.00
 );
 
--- ----------------------------------------------------------------
--- Daily ingredient orders / restocking log
--- ----------------------------------------------------------------
 CREATE TABLE order_ingredients (
-    order_date        DATE PRIMARY KEY,
-    price_spice       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    price_vegetables  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    price_meat        DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    total_spice       INT NOT NULL DEFAULT 0,
-    total_vegetables  INT NOT NULL DEFAULT 0,
-    total_meat        INT NOT NULL DEFAULT 0
+    order_date        TEXT PRIMARY KEY,
+    price_spice       REAL NOT NULL DEFAULT 0.00,
+    price_vegetables  REAL NOT NULL DEFAULT 0.00,
+    price_meat        REAL NOT NULL DEFAULT 0.00,
+    total_spice       INTEGER NOT NULL DEFAULT 0,
+    total_vegetables  INTEGER NOT NULL DEFAULT 0,
+    total_meat        INTEGER NOT NULL DEFAULT 0
 );
 
--- ----------------------------------------------------------------
--- Seed data (example)
--- ----------------------------------------------------------------
+-- Seed menu items
 INSERT INTO Item (name, price) VALUES
     ('Lahmacun', 45.00),
     ('Pide', 55.00),
@@ -85,14 +64,11 @@ INSERT INTO Item (name, price) VALUES
     ('Durum', 60.00),
     ('Beverage', 15.00);
 
+-- Seed ingredient usage per item (item_id = 7 holds running stock totals)
 INSERT INTO ingredients (item_id, spice, vegetable, meat) VALUES
     (1, 10, 20, 5),
     (2, 5,  30, 10),
     (3, 15, 10, 40),
     (4, 10, 20, 25),
     (5, 0,  0,  0),
-    (7, 500, 500, 500);   -- running stock totals
-
-INSERT INTO SalesClerk (clerkName, email, password) VALUES
-    ('Ahmet Demir', 'ahmet@restaurant.local',
-     '$2b$12$K.v1xJQ9yGJ7j2Y7j2Y7eO9yGJ7j2Y7eO9yGJ7j2Y7eO9yGJ7j2');  -- password: clerk123
+    (7, 500, 500, 500);

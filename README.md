@@ -1,18 +1,16 @@
 # Restaurant Ordering DBMS
 
-A full-stack Flask + MySQL restaurant ordering system with separate portals for customers and sales clerks. Built as a database systems course project — production-ready with environment-based configuration, bcrypt password hashing, and per-request database connections.
+A full-stack Flask + SQLite restaurant ordering system with separate portals for customers and sales clerks. Built as a database systems course project — zero external dependencies, deploys instantly on Render (free tier).
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green)](https://flask.palletsprojects.com)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0-orange)](https://mysql.com)
+[![SQLite](https://img.shields.io/badge/Database-SQLite-lightgrey)](https://www.sqlite.org)
 
 ---
 
 ## 🌐 Live Website
 
-**Render URL:** `https://your-app-name.onrender.com`
-
-*(Replace this with your actual Render URL after deployment)*
+**Render URL:** `https://restaurant-ordering-dbms.onrender.com`
 
 ### Demo Accounts
 | Role | Email | Password |
@@ -28,27 +26,25 @@ Restaurant Ordering DBMS manages a restaurant's daily operations:
 
 - **Customers** can register, log in, browse the menu, and place orders. Orders are checked against live ingredient stock (spice, vegetables, meat) so the restaurant never sells what it can't make.
 - **Sales clerks** can log in to a dashboard, view all orders with daily and per-customer P&L reports, generate printable bills, and record daily ingredient restocking.
-- All data lives in MySQL; every query uses parameterized statements (no SQL injection).
+- All data lives in a local SQLite file (`restaurant.db`) — no external database server needed.
+- Every query uses parameterized statements (no SQL injection).
 
 ---
 
-## 🚀 Deploy on Render (free tier)
+## 🚀 Deploy on Render (free tier) — no database setup needed
+
+Since the app uses SQLite, you don't need MySQL or any external database:
 
 1. **Fork** this repo to your GitHub account.
-2. **Create a MySQL database** (e.g. [db4free.net](https://db4free.net) or any free MySQL host). Note the host, user, and password.
-3. **Create a Web Service** on [Render](https://render.com):
+2. **Create a Web Service** on [Render](https://render.com):
    - Connect your GitHub repo
    - Build command: `pip install -r requirements.txt`
    - Start command: `gunicorn backEnd:app`
-   - Environment variables:
+   - Environment variables (optional — only `SECRET_KEY` is recommended):
      - `SECRET_KEY` — any long random string
-     - `DB_HOST` — your MySQL host
-     - `DB_USER` — your MySQL username
-     - `DB_PASSWORD` — your MySQL password
-     - `DB_NAME` = `assignment3database`
      - `FLASK_DEBUG` = `false`
-4. **Seed the database** by running `schema.sql` against your MySQL instance.
-5. Visit your Render URL.
+3. Click **Create Web Service**. Render will handle the rest.
+4. Visit your Render URL.
 
 ---
 
@@ -61,15 +57,17 @@ python -m venv venv
 venv\Scripts\activate      # Windows
 source venv/bin/activate   # macOS/Linux
 pip install -r requirements.txt
-mysql -u root -p < schema.sql
-cp .env.example .env       # fill in your DB credentials
 python backEnd.py
 ```
 Visit **http://127.0.0.1:5000** locally.
 
+The SQLite database (`restaurant.db`) is created automatically on first run with sample menu items and a sales clerk account.
+
 ---
 
-## 🗄 Database Schema
+## 🗄 Database (SQLite)
+
+No MySQL, no external host, no environment variables for DB credentials. The schema is in `schema.sql` and is applied automatically when the app starts:
 
 ```
 Customer          customer_id, name, telephone, email
@@ -80,17 +78,15 @@ orders            order_id, customer_id, item, quantity, date, totalPrice
 order_ingredients order_date, prices, totals per ingredient
 ```
 
-See `schema.sql` for the full DDL and seed data.
-
 ---
 
 ## 📁 Project Structure
 
 ```
 restaurant-ordering-dbms/
-├── backEnd.py          # Flask app — routes + database logic
-├── schema.sql          # MySQL schema + seed data
-├── requirements.txt    # Python dependencies
+├── backEnd.py          # Flask app — routes + SQLite logic
+├── schema.sql          # SQLite schema + seed data (auto-applied)
+├── requirements.txt    # Python dependencies (Flask, gunicorn)
 ├── Procfile            # Render process definition
 ├── runtime.txt         # Python version pin
 ├── .env.example        # Environment variable template
@@ -107,6 +103,12 @@ restaurant-ordering-dbms/
     ├── monthly_report.html
     └── monthly_report_form.html
 ```
+
+---
+
+## ⚠️ Important Note (Render Free Tier)
+
+Render's free tier uses an **ephemeral filesystem**, which means the SQLite database (`restaurant.db`) resets to the seed data every time the service redeploys or sleeps. This is fine for a portfolio demo. For persistent production data, upgrade to a Render persistent disk or use an external database.
 
 ---
 

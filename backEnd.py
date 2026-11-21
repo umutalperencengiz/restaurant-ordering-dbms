@@ -1,30 +1,22 @@
 import os
+import sqlite3
 from flask import Flask, render_template, request, redirect, session, flash, g
 from werkzeug.security import generate_password_hash, check_password_hash
-import mysql.connector
-from mysql.connector import Error
 from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
 
+DATABASE = os.environ.get("DATABASE_URL", "restaurant.db")
+
+
 # ---------------------------------------------------------------- database
 def get_db():
-    """Open a new database connection per request (thread-safe for production)."""
+    """Open a new SQLite connection per request (thread-safe for production)."""
     if "db" not in g:
-        try:
-            g.db = mysql.connector.connect(
-                host=os.environ.get("DB_HOST", "localhost"),
-                user=os.environ.get("DB_USER", "root"),
-                password=os.environ.get("DB_PASSWORD", "123456"),
-                database=os.environ.get("DB_NAME", "assignment3database"),
-                autocommit=False,
-            )
-            g.cursor = g.db.cursor(buffered=True)
-        except Error as e:
-            flash(f"Database connection failed: {e}", "error")
-            g.db = None
-            g.cursor = None
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row
+        g.cursor = g.db.cursor()
     return g.db, g.cursor
 
 
@@ -38,11 +30,32 @@ def close_db(exception=None):
         db.close()
 
 
+def init_db():
+    """Create tables and seed data on first run."""
+    db = sqlite3.connect(DATABASE)
+    cursor = db.cursor()
+
+    schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
+    if os.path.exists(schema_path):
+        with open(schema_path, "r", encoding="utf-8") as f:
+            db.executescript(f.read())
+
+    # Seed a default sales clerk if none exists
+    cursor.execute("SELECT COUNT(*) FROM SalesClerk")
+    if cursor.fetchone()[0] == 0:
+        pw_hash = generate_password_hash("clerk123")
+        cursor.execute(
+            "INSERT INTO SalesClerk (clerkName, email, password) VALUES (?, ?, ?)",
+            ("Ahmet Demir", "ahmet@restaurant.local", pw_hash),
+        )
+        db.commit()
+
+    db.close()
+
+
 def db_query(query, args=(), fetchone=False, commit=False):
     """Helper: run a query using the request-scoped connection."""
     db, cursor = get_db()
-    if cursor is None:
-        return None
     cursor.execute(query, args)
     if commit:
         db.commit()
@@ -53,24 +66,23 @@ def db_query(query, args=(), fetchone=False, commit=False):
 
 
 def normalize_date(value: str) -> str:
-    """Convert a YYYY-MM (from <input type='month'>) to YYYY-MM-DD for MySQL DATE."""
+    """Convert a YYYY-MM (from <input type='month'>) to YYYY-MM-DD for SQLite DATE."""
     value = value.strip()
     if not value:
         return value
     if len(value) == 7 and value[4] == "-":  # YYYY-MM
         return value + "-01"
-    return value  # already YYYY-MM-DD or invalid (MySQL will reject)
+    return value
+
+
+# Initialize database on import (works with gunicorn too)
+init_db()
 
 
 # ---------------------------------------------------------------- routes
 @app.route("/")
 def login():
     return render_template("login.html")
-
-
-@app.route("/order_ingredients")
-def order_ingredients():
-    return render_template("order_ingredients.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -87,9 +99,8 @@ def register():
         flash("Please fill in all fields.", "error")
         return render_template("register.html")
 
-    # Check if customer already exists
     existing = db_query(
-        "SELECT customer_id FROM Customer WHERE email=%s OR telephoneNum=%s",
+        "SELECT customer_id FROM Customer WHERE email=? OR telephoneNum=?",
         (email, telephone), fetchone=True,
     )
     if existing:
@@ -98,7 +109,7 @@ def register():
 
     try:
         new_id = db_query(
-            "INSERT INTO Customer (customerName, telephoneNum, email) VALUES (%s, %s, %s)",
+            "INSERT INTO Customer (customerName, telephoneNum, email) VALUES (?, ?, ?)",
             (name, telephone, email), commit=True,
         )
         session["user"] = name
@@ -107,7 +118,7 @@ def register():
         session["email"] = email
         flash("Account created successfully! You are now logged in.", "success")
         return redirect("/customer_dashboard")
-    except Error as e:
+    except sqlite3.Error as e:
         flash(f"Registration failed: {e}", "error")
         return render_template("register.html")
 
@@ -121,7 +132,7 @@ def sales_clerk_login():
         return redirect("/")
 
     row = db_query(
-        "SELECT clerkName, email, password FROM SalesClerk WHERE email=%s",
+        "SELECT clerkName, email, password FROM SalesClerk WHERE email=?",
         (email,), fetchone=True,
     )
     if row and check_password_hash(row[2], password):
@@ -145,7 +156,7 @@ def customer_login():
 
     row = db_query(
         "SELECT customer_id, customerName, telephoneNum, email FROM Customer "
-        "WHERE customerName=%s AND telephoneNum=%s AND email=%s",
+        "WHERE customerName=? AND telephoneNum=? AND email=?",
         (name, telephone, email), fetchone=True,
     )
     if row:
@@ -155,7 +166,6 @@ def customer_login():
         flash(f"Welcome back, {row[1]}!", "success")
         return redirect("/customer_dashboard")
 
-    # Customer not registered — send them to the registration page
     flash("No account found with these details. Please register first.", "error")
     return redirect("/register")
 
@@ -174,7 +184,7 @@ def sales_clerk_dashboard():
     if "user" not in session or session.get("role") != "clerk":
         return redirect("/")
     row = db_query(
-        "SELECT clerkName FROM SalesClerk WHERE email=%s",
+        "SELECT clerkName FROM SalesClerk WHERE email=?",
         (session.get("user_email"),), fetchone=True,
     )
     clerk_name = row[0] if row else session["user"]
@@ -202,7 +212,7 @@ def view_orders():
             id_row = db_query(
                 "SELECT GROUP_CONCAT(o.order_id) FROM orders o JOIN customer c "
                 "ON o.customer_id = c.customer_id "
-                "WHERE c.customerName=%s AND c.telephoneNum=%s AND o.date=%s",
+                "WHERE c.customerName=? AND c.telephoneNum=? AND o.date=?",
                 (customer_name, contact_no, order_date), fetchone=True,
             )
             order_ids = id_row[0] if id_row and id_row[0] else ""
@@ -212,7 +222,7 @@ def view_orders():
             day_total = db_query(
                 "SELECT SUM(o.totalPrice) FROM orders o JOIN customer c "
                 "ON o.customer_id = c.customer_id "
-                "WHERE c.customerName=%s AND c.telephoneNum=%s AND o.date=%s",
+                "WHERE c.customerName=? AND c.telephoneNum=? AND o.date=?",
                 (customer_name, contact_no, order_date), fetchone=True,
             )
             daily_pln[order_date] = day_total[0] if day_total and day_total[0] else 0
@@ -220,7 +230,7 @@ def view_orders():
             cust_total = db_query(
                 "SELECT SUM(o.totalPrice) FROM orders o JOIN customer c "
                 "ON o.customer_id = c.customer_id "
-                "WHERE c.customerName=%s AND c.telephoneNum=%s",
+                "WHERE c.customerName=? AND c.telephoneNum=?",
                 (customer_name, contact_no), fetchone=True,
             )
             if cust_total and cust_total[0]:
@@ -229,7 +239,7 @@ def view_orders():
             day_cust_total = db_query(
                 "SELECT SUM(o.totalPrice) FROM orders o JOIN customer c "
                 "ON o.customer_id = c.customer_id "
-                "WHERE c.customerName=%s AND c.telephoneNum=%s AND o.date=%s",
+                "WHERE c.customerName=? AND c.telephoneNum=? AND o.date=?",
                 (customer_name, contact_no, order_date), fetchone=True,
             )
             if day_cust_total and day_cust_total[0]:
@@ -239,7 +249,7 @@ def view_orders():
             ids = order[3].split(",")
             order_values[order[3]] = []
             for oid in ids:
-                val = db_query("SELECT totalPrice FROM orders WHERE order_id=%s", (oid,), fetchone=True)
+                val = db_query("SELECT totalPrice FROM orders WHERE order_id=?", (oid,), fetchone=True)
                 order_values[order[3]].append(val[0] if val and val[0] else 0)
 
         total_pln = sum(daily_pln.values())
@@ -253,7 +263,7 @@ def view_orders():
             total_pln_per_customer=total_pln_per_customer,
             total_pln_per_customer_per_day=total_pln_per_customer_per_day,
         )
-    except Error as e:
+    except sqlite3.Error as e:
         return f"Database error: {e}", 500
 
 
@@ -271,23 +281,22 @@ def generate_bills():
         try:
             orders = db_query(
                 "SELECT i.name, o.totalPrice FROM orders o JOIN item i ON o.name = i.name "
-                "WHERE o.date = %s AND o.customer_id = %s",
+                "WHERE o.date = ? AND o.customer_id = ?",
                 (bill_date, customer_id),
             ) or []
             cust = db_query(
-                "SELECT customerName, telephoneNum FROM Customer WHERE customer_id=%s",
+                "SELECT customerName FROM Customer WHERE customer_id=?",
                 (customer_id,), fetchone=True,
             )
             customer_name = cust[0] if cust else "Customer"
-            contact_no = cust[1] if cust and len(cust) > 1 else ""
             total_price = sum(o[1] for o in orders if o[1] is not None)
             bill_no = f"B-{bill_date.replace('-', '')}-{customer_name.replace(' ', '')}"
             return render_template(
                 "bill_template.html",
                 bill_no=bill_no, bill_date=bill_date, customer_name=customer_name,
-                contact_no=contact_no, orders=orders, total_price=total_price,
+                orders=orders, total_price=total_price,
             )
-        except Error as e:
+        except sqlite3.Error as e:
             return f"Database error: {e}", 500
 
     unique_dates = [r[0] for r in (db_query("SELECT DISTINCT date FROM orders ORDER BY date DESC") or [])]
@@ -317,14 +326,14 @@ def update_order_ingredients():
 
     try:
         count_row = db_query(
-            "SELECT COUNT(*) FROM order_ingredients WHERE order_date=%s",
+            "SELECT COUNT(*) FROM order_ingredients WHERE order_date=?",
             (order_date,), fetchone=True,
         )
         count = count_row[0] if count_row else 0
 
         if count > 0:
             prev = db_query(
-                "SELECT total_spice, total_vegetables, total_meat FROM order_ingredients WHERE order_date=%s",
+                "SELECT total_spice, total_vegetables, total_meat FROM order_ingredients WHERE order_date=?",
                 (order_date,), fetchone=True,
             )
             if prev:
@@ -335,8 +344,8 @@ def update_order_ingredients():
                 diff_spice = diff_vegetables = diff_meat = 0
 
             db_query(
-                "UPDATE order_ingredients SET price_spice=%s, price_vegetables=%s, price_meat=%s, "
-                "total_spice=%s, total_vegetables=%s, total_meat=%s WHERE order_date=%s",
+                "UPDATE order_ingredients SET price_spice=?, price_vegetables=?, price_meat=?, "
+                "total_spice=?, total_vegetables=?, total_meat=? WHERE order_date=?",
                 (price_spice, price_vegetables, price_meat, total_spice, total_vegetables, total_meat, order_date),
                 commit=True,
             )
@@ -345,7 +354,7 @@ def update_order_ingredients():
             db_query(
                 "INSERT INTO order_ingredients "
                 "(order_date, price_spice, price_vegetables, price_meat, total_spice, total_vegetables, total_meat) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (order_date, price_spice, price_vegetables, price_meat, total_spice, total_vegetables, total_meat),
                 commit=True,
             )
@@ -356,14 +365,13 @@ def update_order_ingredients():
         year, month = map(int, order_date.split("-")[:2])
         if now.year <= year and now.month <= month:
             db_query(
-                "UPDATE ingredients SET Spice = Spice + %s, Vegetable = Vegetable + %s, Meat = Meat + %s WHERE item_id = %s",
+                "UPDATE ingredients SET Spice = Spice + ?, Vegetable = Vegetable + ?, Meat = Meat + ? WHERE item_id = ?",
                 (diff_spice, diff_vegetables, diff_meat, 7), commit=True,
             )
 
         flash(message, "success")
         return render_template("order_ingredients.html", message=message)
-    except Error as e:
-        db_query("ROLLBACK", commit=True)
+    except sqlite3.Error as e:
         flash(f"Database error: {e}", "error")
         return redirect("/order_ingredients")
 
@@ -377,11 +385,11 @@ def show_ingredients():
         try:
             ingredient_orders = db_query(
                 "SELECT price_spice, price_vegetables, price_meat, total_spice, total_vegetables, total_meat "
-                "FROM order_ingredients WHERE order_date=%s",
+                "FROM order_ingredients WHERE order_date=?",
                 (order_date,),
             ) or []
             return render_template("monthly_report.html", order_date=order_date, ingredient_orders=ingredient_orders)
-        except Error as e:
+        except sqlite3.Error as e:
             return f"Database error: {e}", 500
     return render_template("monthly_report_form.html")
 
@@ -391,20 +399,6 @@ def logout():
     session.clear()
     flash("Logged out.", "success")
     return redirect("/")
-
-
-@app.route("/health")
-def health():
-    """Health check endpoint for deployment monitoring (Render, etc.)."""
-    db, cursor = get_db()
-    if cursor is None:
-        return {"status": "unhealthy", "database": "disconnected"}, 503
-    try:
-        cursor.execute("SELECT 1")
-        cursor.fetchone()
-        return {"status": "healthy", "database": "connected"}
-    except Error as e:
-        return {"status": "unhealthy", "database": str(e)}, 503
 
 
 @app.route("/order_screen")
@@ -433,14 +427,14 @@ def place_order():
             if quantity < 1:
                 continue
 
-            price_row = db_query("SELECT price FROM item WHERE name=%s", (item,), fetchone=True)
+            price_row = db_query("SELECT price FROM item WHERE name=?", (item,), fetchone=True)
             if not price_row:
                 continue
             item_price = price_row[0]
             total_price = item_price * quantity
 
             ing_row = db_query(
-                "SELECT spice, vegetable, meat FROM ingredients WHERE item_id = (SELECT item_id FROM item WHERE name=%s)",
+                "SELECT spice, vegetable, meat FROM ingredients WHERE item_id = (SELECT item_id FROM item WHERE name=?)",
                 (item,), fetchone=True,
             )
             if not ing_row:
@@ -461,13 +455,13 @@ def place_order():
                 return redirect("/order_screen")
 
             db_query(
-                "INSERT INTO orders (customer_id, name, quantity, date, totalPrice) VALUES (%s, %s, %s, %s, %s)",
+                "INSERT INTO orders (customer_id, name, quantity, date, totalPrice) VALUES (?, ?, ?, ?, ?)",
                 (customer_id, item, quantity, date, total_price), commit=True,
             )
 
         flash("Order placed successfully!", "success")
         return redirect("/order_screen")
-    except Error as e:
+    except sqlite3.Error as e:
         return f"Database error: {e}", 500
 
 
