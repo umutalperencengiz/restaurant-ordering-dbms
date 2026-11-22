@@ -13,7 +13,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
         }
 
         h1 {
@@ -22,11 +22,12 @@
         }
 
         .login-container {
-            width: 300px;
-            padding: 20px;
+            width: 320px;
+            padding: 24px;
             background-color: #fff;
-            border-radius: 5px;
+            border-radius: 6px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin: 24px 0;
         }
 
         .login-container h2 {
@@ -43,9 +44,10 @@
             margin-bottom: 15px;
             border: 1px solid #ccc;
             border-radius: 3px;
+            box-sizing: border-box;
         }
 
-        button[type="submit"] {
+        button[type="submit"], .login-toggle button {
             width: 100%;
             padding: 10px;
             background-color: #007bff;
@@ -56,7 +58,7 @@
             transition: background-color 0.3s ease;
         }
 
-        button[type="submit"]:hover {
+        button[type="submit"]:hover, .login-toggle button:hover {
             background-color: #0056b3;
         }
 
@@ -68,6 +70,11 @@
 
         .login-toggle button {
             width: 48%;
+            background-color: #6c757d;
+        }
+
+        .login-toggle button.active {
+            background-color: #007bff;
         }
 
         .back-link {
@@ -90,7 +97,7 @@
         }
 
         .flash-messages .error {
-            color: #dc3545;
+            color: #721c24;
             background-color: #f8d7da;
             border: 1px solid #f5c6cb;
             padding: 8px 12px;
@@ -123,16 +130,16 @@
         </div>
 
         <div class="login-toggle">
-            <button onclick="showLogin()">Login</button>
-            <button onclick="showRegister()" style="background:#0056b3;">Register</button>
+            <button type="button" id="loginTab" onclick="showLogin()">Login</button>
+            <button type="button" id="registerTab" class="active" onclick="showRegister()">Register</button>
         </div>
 
         <div id="customerLogin" style="display: none;">
             <h2>Customer Login</h2>
             <form action="/customer_login" method="POST">
-                <input type="text" name="name" placeholder="Name" required><br>
-                <input type="tel" name="telephone" placeholder="Telephone Number" required><br>
                 <input type="email" name="email" placeholder="Email" required><br>
+                <input type="tel" name="telephone" placeholder="Telephone Number" required><br>
+                <input type="text" name="name" placeholder="Name (optional)"><br>
                 <button type="submit">Login</button>
             </form>
         </div>
@@ -156,15 +163,16 @@
         function showLogin() {
             document.getElementById('customerLogin').style.display = 'block';
             document.getElementById('customerRegister').style.display = 'none';
+            document.getElementById('loginTab').classList.add('active');
+            document.getElementById('registerTab').classList.remove('active');
         }
 
         function showRegister() {
             document.getElementById('customerLogin').style.display = 'none';
             document.getElementById('customerRegister').style.display = 'block';
+            document.getElementById('registerTab').classList.add('active');
+            document.getElementById('loginTab').classList.remove('active');
         }
-
-        // Start on the register tab since we arrived from /register
-        showRegister();
     </script>
 </body>
 </html>

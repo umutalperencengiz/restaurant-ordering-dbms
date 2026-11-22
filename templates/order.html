@@ -15,6 +15,54 @@
         h1 {
             text-align: center;
             color: #333;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .topbar {
+            max-width: 560px;
+            margin: 0 auto 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #444;
+        }
+
+        .topbar a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .flash-messages {
+            max-width: 560px;
+            margin: 0 auto 16px;
+        }
+
+        .flash-messages .error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .flash-messages .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 8px;
         }
 
         form {
@@ -22,7 +70,7 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
-            max-width: 500px;
+            max-width: 520px;
             margin: 0 auto;
         }
 
@@ -34,7 +82,7 @@
         }
 
         select, input[type="number"] {
-            width: calc(100% - 10px);
+            width: 100%;
             padding: 10px;
             margin-bottom: 15px;
             border: 1px solid #ccc;
@@ -48,6 +96,7 @@
             color: #007bff;
             text-decoration: underline;
             margin-top: 10px;
+            display: inline-block;
         }
 
         .add-dish:hover {
@@ -58,7 +107,7 @@
             background-color: #4CAF50;
             color: white;
             padding: 14px 20px;
-            margin: 8px 0;
+            margin: 16px 0 0;
             border: none;
             border-radius: 4px;
             cursor: pointer;
@@ -69,43 +118,74 @@
         button[type="submit"]:hover {
             background-color: #45a049;
         }
+
+        .stock {
+            max-width: 520px;
+            margin: 18px auto 0;
+            text-align: center;
+            font-size: 13px;
+            color: #777;
+        }
     </style>
 </head>
 <body>
     <h1>Place Order</h1>
+    <p class="subtitle">Logged in as {{ user }}</p>
+
+    <div class="topbar">
+        <span>Menu &amp; ingredient-aware ordering</span>
+        <a href="/logout">Log out</a>
+    </div>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
     <form action="/place_order" method="POST">
         <div id="items">
             <div class="item">
                 <label for="item1">Item 1:</label>
                 <select id="item1" name="item1" required>
-                    {% for item in items %}
-                        <option value="{{ item }}">{{ item }}</option>
+                    {% for item in menu %}
+                        <option value="{{ item.name }}">{{ item.name }} — {{ "%.2f"|format(item.price) }} PLN</option>
                     {% endfor %}
                 </select>
                 <label for="quantity1">Quantity:</label>
-                <input type="number" id="quantity1" name="quantity1" required min="1"><br>
+                <input type="number" id="quantity1" name="quantity1" required min="1" value="1"><br>
             </div>
         </div>
         <div id="add-item" class="add-dish">+ Add Dish</div>
         <button type="submit">Place Order</button>
     </form>
 
+    {% if stock %}
+    <p class="stock">
+        Remaining stock — spice: {{ stock.spice }} g, vegetables: {{ stock.vegetable }} g, meat: {{ stock.meat }} g
+    </p>
+    {% endif %}
+
     <script>
+        const menuOptions = `{% for item in menu %}<option value="{{ item.name }}">{{ item.name }} — {{ "%.2f"|format(item.price) }} PLN</option>{% endfor %}`;
         let counter = 2;
         const addItemButton = document.getElementById('add-item');
         addItemButton.addEventListener('click', function() {
+            if (counter > 5) {
+                return;
+            }
             const itemsDiv = document.getElementById('items');
             const newItemDiv = document.createElement('div');
             newItemDiv.classList.add('item');
             newItemDiv.innerHTML = `
                 <label for="item${counter}">Item ${counter}:</label>
-                <select id="item${counter}" name="item${counter}" required>
-                    {% for item in items %}
-                        <option value="{{ item }}">{{ item }}</option>
-                    {% endfor %}
-                </select>
+                <select id="item${counter}" name="item${counter}" required>${menuOptions}</select>
                 <label for="quantity${counter}">Quantity:</label>
-                <input type="number" id="quantity${counter}" name="quantity${counter}" required min="1"><br>
+                <input type="number" id="quantity${counter}" name="quantity${counter}" required min="1" value="1"><br>
             `;
             itemsDiv.appendChild(newItemDiv);
             counter++;

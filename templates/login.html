@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Restaurant Ordering — Login</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,7 +13,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
         }
 
         h1 {
@@ -22,11 +22,12 @@
         }
 
         .login-container {
-            width: 300px;
-            padding: 20px;
+            width: 320px;
+            padding: 24px;
             background-color: #fff;
-            border-radius: 5px;
+            border-radius: 6px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin: 24px 0;
         }
 
         .login-container h2 {
@@ -43,9 +44,10 @@
             margin-bottom: 15px;
             border: 1px solid #ccc;
             border-radius: 3px;
+            box-sizing: border-box;
         }
 
-        button[type="submit"] {
+        button[type="submit"], .login-toggle button {
             width: 100%;
             padding: 10px;
             background-color: #007bff;
@@ -56,7 +58,7 @@
             transition: background-color 0.3s ease;
         }
 
-        button[type="submit"]:hover {
+        button[type="submit"]:hover, .login-toggle button:hover {
             background-color: #0056b3;
         }
 
@@ -68,6 +70,48 @@
 
         .login-toggle button {
             width: 48%;
+            background-color: #6c757d;
+        }
+
+        .login-toggle button.active {
+            background-color: #007bff;
+        }
+
+        .flash-messages {
+            margin-bottom: 15px;
+        }
+
+        .flash-messages .error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .flash-messages .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .hint {
+            margin-top: 14px;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .hint code {
+            background: #f1f1f1;
+            padding: 1px 4px;
+            border-radius: 3px;
         }
     </style>
 </head>
@@ -75,9 +119,19 @@
     <div class="login-container">
         <h1>Login</h1>
 
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
         <div class="login-toggle">
-            <button onclick="showSalesClerkLogin()">Sales Clerk</button>
-            <button onclick="showCustomerLogin()">Customer</button>
+            <button type="button" id="clerkTab" class="active" onclick="showSalesClerkLogin()">Sales Clerk</button>
+            <button type="button" id="customerTab" onclick="showCustomerLogin()">Customer</button>
         </div>
 
         <div id="salesClerkLogin">
@@ -87,18 +141,20 @@
                 <input type="password" name="password" placeholder="Password" required><br>
                 <button type="submit">Login</button>
             </form>
+            <p class="hint">Demo clerk: <code>ahmet@restaurant.local</code> / <code>clerk123</code></p>
         </div>
 
         <div id="customerLogin" style="display: none;">
             <h2>Customer Login</h2>
             <form action="/customer_login" method="POST">
-                <input type="text" name="name" placeholder="Name" required><br>
-                <input type="tel" name="telephone" placeholder="Telephone Number" required><br>
                 <input type="email" name="email" placeholder="Email" required><br>
+                <input type="tel" name="telephone" placeholder="Telephone Number" required><br>
+                <input type="text" name="name" placeholder="Name (optional)"><br>
                 <button type="submit">Login</button>
             </form>
-            <p style="margin-top:12px;text-align:center;font-size:13px;">
-                Don't have an account? <a href="/register" style="color:#007bff;">Register here</a>
+            <p class="hint">
+                New here? <a href="/register" style="color:#007bff;">Create an account</a><br>
+                Demo customer: <code>demo@customer.local</code> / <code>5550000001</code>
             </p>
         </div>
     </div>
@@ -107,11 +163,15 @@
         function showSalesClerkLogin() {
             document.getElementById('salesClerkLogin').style.display = 'block';
             document.getElementById('customerLogin').style.display = 'none';
+            document.getElementById('clerkTab').classList.add('active');
+            document.getElementById('customerTab').classList.remove('active');
         }
 
         function showCustomerLogin() {
             document.getElementById('customerLogin').style.display = 'block';
             document.getElementById('salesClerkLogin').style.display = 'none';
+            document.getElementById('customerTab').classList.add('active');
+            document.getElementById('clerkTab').classList.remove('active');
         }
     </script>
 </body>

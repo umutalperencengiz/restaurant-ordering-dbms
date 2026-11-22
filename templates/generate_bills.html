@@ -15,7 +15,7 @@
             color: #333;
         }
         form {
-            max-width: 400px;
+            max-width: 420px;
             margin: 0 auto;
             background-color: #fff;
             padding: 30px;
@@ -47,29 +47,72 @@
         button:hover {
             background-color: #45a049;
         }
+        .back {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 14px;
+        }
+        .back a { color: #007bff; text-decoration: none; }
+        .back a:hover { text-decoration: underline; }
+        .flash-messages {
+            max-width: 420px;
+            margin: 0 auto 15px;
+        }
+        .flash-messages .error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .flash-messages .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .empty {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <h1>Generate Bills</h1>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
     <form action="/generate_bills" method="post" id="bill_form">
         <label for="bill_date">Select Bill Date:</label>
-        <select name="bill_date" id="bill_date" onchange="submitForm()">
+        <select name="bill_date" id="bill_date">
             {% for date in unique_dates %}
                 <option value="{{ date }}">{{ date }}</option>
             {% endfor %}
         </select>
         <label for="customer_id">Select Customer:</label>
         <select name="customer_id" id="customer_id">
-            {% for customer_id in unique_customer_ids %}
-                <option value="{{ customer_id }}">{{ customer_id }}</option>
+            {% for customer_id, customer_name in unique_customers %}
+                <option value="{{ customer_id }}">{{ customer_name }}</option>
             {% endfor %}
         </select>
         <button type="submit">Generate Bill</button>
+        {% if not unique_dates or not unique_customers %}
+            <p class="empty">No orders yet — place an order as a customer first.</p>
+        {% endif %}
     </form>
-    <script>
-        function submitForm() {
-            document.getElementById("bill_form").submit();
-        }
-    </script>
+
+    <div class="back"><a href="/sales_clerk_dashboard">&larr; Back to dashboard</a></div>
 </body>
 </html>
